@@ -7,40 +7,43 @@
 
 import Foundation
 
-class TimerModel: ObservableObject {
+class TimerModel: ObservableObject, Identifiable {
+    let id = UUID()
+    @Published var name: String
     @Published var elapsedTime: TimeInterval = 0
     @Published var isRunning: Bool = false
-    @Published var name: String = "Timer"
-    
+    @Published var isPaused: Bool = false
     private var timer: Timer?
+    
+    init(name: String) {
+        self.name = name
+    }
     
     func start() {
         if !isRunning {
             isRunning = true
+            isPaused = false
             timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-                self?.elapsedTime += 1
+                guard let self = self else { return }
+                if !self.isPaused {
+                    self.elapsedTime += 1
+                }
             }
         }
     }
     
     func pause() {
-        if isRunning {
-            isRunning = false
-            timer?.invalidate()
-            timer = nil
-        }
+        isPaused.toggle()
     }
     
-    func reset() {
-        pause()
+    func stop() {
+        isRunning = false
+        isPaused = false
         elapsedTime = 0
+        timer?.invalidate()
     }
     
-    var formattedElapsedTime: String {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.hour, .minute, .second]
-        formatter.unitsStyle = .positional
-        formatter.zeroFormattingBehavior = .pad
-        return formatter.string(from: elapsedTime) ?? "00:00:00"
+    func rename(to newName: String) {
+        name = newName
     }
 }
