@@ -98,7 +98,8 @@ struct TimerRow: View {
                 Text(timer.name)
                     .font(.headline)
                 Text(timer.elapsedTime.formattedTime)
-                    .font(.subheadline)
+                    .font(.largeTitle) // Increased font size for time display
+                    .padding(.bottom, 8) // Added padding for better visual separation
             }
             Spacer()
             if timer.isRunning {
