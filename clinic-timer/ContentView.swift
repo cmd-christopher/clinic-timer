@@ -20,7 +20,7 @@ struct ContentView: View {
                     Button(action: {
                         showResetConfirmation = true
                     }) {
-                        Image(systemName: "arrow.counterclockwise")
+                        Text("Reset Timers")
                             .foregroundColor(.white)
                             .padding(8)
                             .background(Color.red)
@@ -28,8 +28,8 @@ struct ContentView: View {
                     }
                     .alert(isPresented: $showResetConfirmation) {
                         Alert(
-                            title: Text("Reset All Timers?"),
-                            message: Text("This will reset all timers to zero. Are you sure?"),
+                            title: Text("Confirm Reset"),
+                            message: Text("Are you sure you want to reset all timers?"),
                             primaryButton: .destructive(Text("Reset")) {
                                 timers.forEach { $0.stop() }
                             },
@@ -45,6 +45,9 @@ struct ContentView: View {
                             .padding(8)
                             .background(Color.blue)
                             .cornerRadius(8)
+                    }
+                    .sheet(isPresented: $showAddTimerSheet) {
+                        AddTimerSheet(newTimerName: $newTimerName, timers: $timers)
                     }
                 }
                 .padding(.horizontal)
@@ -63,19 +66,22 @@ struct ContentView: View {
                                 .tint(.red)
                             }
                     }
+                    .onMove(perform: moveTimers)
                     .onDelete(perform: deleteTimers)
                 }
                 .listStyle(PlainListStyle())
             }
-            .navigationTitle("Clinic Timer")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(true)
             .preferredColorScheme(.dark)
             .onDisappear {
                 TimerModel.saveTimers(timers)
             }
-            .sheet(isPresented: $showAddTimerSheet) {
-                AddTimerSheet(newTimerName: $newTimerName, timers: $timers)
-            }
         }
+    }
+    
+    func moveTimers(from source: IndexSet, to destination: Int) {
+        timers.move(fromOffsets: source, toOffset: destination)
     }
     
     func deleteTimers(at offsets: IndexSet) {
@@ -91,7 +97,7 @@ struct TimerRow: View {
             VStack(alignment: .leading) {
                 Text(timer.name)
                     .font(.headline)
-                Text("\(Int(timer.elapsedTime)) seconds")
+                Text(timer.elapsedTime.formattedTime)
                     .font(.subheadline)
             }
             Spacer()
@@ -147,4 +153,13 @@ struct AddTimerSheet: View {
 
 #Preview {
     ContentView()
+}
+
+extension TimeInterval {
+    var formattedTime: String {
+        let hours = Int(self) / 3600
+        let minutes = (Int(self) % 3600) / 60
+        let seconds = Int(self) % 60
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
 }
