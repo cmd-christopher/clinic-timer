@@ -11,10 +11,44 @@ struct ContentView: View {
     @State private var timers: [TimerModel] = TimerModel.loadTimers()
     @State private var newTimerName: String = ""
     @State private var showAddTimerSheet: Bool = false
+    @State private var showResetConfirmation: Bool = false
     
     var body: some View {
         NavigationView {
             VStack {
+                HStack {
+                    Button(action: {
+                        showResetConfirmation = true
+                    }) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(Color.red)
+                            .cornerRadius(8)
+                    }
+                    .alert(isPresented: $showResetConfirmation) {
+                        Alert(
+                            title: Text("Reset All Timers?"),
+                            message: Text("This will reset all timers to zero. Are you sure?"),
+                            primaryButton: .destructive(Text("Reset")) {
+                                timers.forEach { $0.stop() }
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+                    Spacer()
+                    Button(action: {
+                        showAddTimerSheet = true
+                    }) {
+                        Image(systemName: "plus")
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(Color.blue)
+                            .cornerRadius(8)
+                    }
+                }
+                .padding(.horizontal)
+                
                 List {
                     ForEach(timers) { timer in
                         TimerRow(timer: timer)
@@ -30,49 +64,22 @@ struct ContentView: View {
                             }
                     }
                     .onDelete(perform: deleteTimers)
-                    .onMove(perform: move)
-                    .moveDisabled(false)
                 }
                 .listStyle(PlainListStyle())
-                
-                Button(action: {
-                    showAddTimerSheet = true
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 30))
-                        .foregroundColor(.white)
-                }
-                .padding()
-                .background(Color.blue)
-                .cornerRadius(15)
-                .sheet(isPresented: $showAddTimerSheet) {
-                    AddTimerSheet(newTimerName: $newTimerName, timers: $timers)
-                }
-                
-                Button(action: {
-                    timers.forEach { $0.stop() }
-                }) {
-                    Text("Reset All")
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color.red)
-                        .cornerRadius(10)
-                }
             }
             .navigationTitle("Clinic Timer")
             .preferredColorScheme(.dark)
             .onDisappear {
                 TimerModel.saveTimers(timers)
             }
+            .sheet(isPresented: $showAddTimerSheet) {
+                AddTimerSheet(newTimerName: $newTimerName, timers: $timers)
+            }
         }
     }
     
     func deleteTimers(at offsets: IndexSet) {
         timers.remove(atOffsets: offsets)
-    }
-    
-    func move(from source: IndexSet, to destination: Int) {
-        timers.move(fromOffsets: source, toOffset: destination)
     }
 }
 
