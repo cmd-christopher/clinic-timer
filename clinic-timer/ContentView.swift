@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var timers: [TimerModel] = []
+    @State private var timers: [TimerModel] = TimerModel.loadTimers()
     @State private var newTimerName: String = ""
     @State private var showAddTimerSheet: Bool = false
     
@@ -59,6 +59,9 @@ struct ContentView: View {
             }
             .navigationTitle("Clinic Timer")
             .preferredColorScheme(.dark)
+            .onDisappear {
+                TimerModel.saveTimers(timers)
+            }
         }
     }
     
