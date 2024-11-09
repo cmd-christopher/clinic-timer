@@ -30,6 +30,11 @@ class TimerModel: ObservableObject, Identifiable, Codable {
         elapsedTime = try container.decode(TimeInterval.self, forKey: .elapsedTime)
         isRunning = try container.decode(Bool.self, forKey: .isRunning)
         isPaused = try container.decode(Bool.self, forKey: .isPaused)
+        
+        // Resume the timer if it was running before
+        if isRunning && !isPaused {
+            start()
+        }
     }
     
     func encode(to encoder: Encoder) throws {

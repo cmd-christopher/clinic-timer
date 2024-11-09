@@ -30,6 +30,8 @@ struct ContentView: View {
                             }
                     }
                     .onDelete(perform: deleteTimers)
+                    .onMove(perform: move)
+                    .moveDisabled(false)
                 }
                 .listStyle(PlainListStyle())
                 
@@ -67,6 +69,10 @@ struct ContentView: View {
     
     func deleteTimers(at offsets: IndexSet) {
         timers.remove(atOffsets: offsets)
+    }
+    
+    func move(from source: IndexSet, to destination: Int) {
+        timers.move(fromOffsets: source, toOffset: destination)
     }
 }
 
