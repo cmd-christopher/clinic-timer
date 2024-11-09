@@ -98,8 +98,11 @@ struct TimerRow: View {
                 Text(timer.name)
                     .font(.headline)
                 Text(timer.elapsedTime.formattedTime)
-                    .font(.largeTitle) // Increased font size for time display
-                    .padding(.bottom, 8) // Added padding for better visual separation
+                    .font(.largeTitle)
+                    .padding(.bottom, 8)
+                Text("Est: \(timer.complexityCode(for: .established)), New: \(timer.complexityCode(for: .new))")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
             }
             Spacer()
             if timer.isRunning {
@@ -161,6 +164,35 @@ extension TimeInterval {
         let hours = Int(self) / 3600
         let minutes = (Int(self) % 3600) / 60
         let seconds = Int(self) % 60
-        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+}
+
+extension TimerModel {
+    enum VisitType {
+        case established
+        case new
+    }
+    
+    func complexityCode(for visitType: VisitType) -> Int {
+        let minutes = Int(elapsedTime / 60)
+        switch visitType {
+        case .established:
+            if minutes <= 10 { return 1 }
+            else if minutes <= 20 { return 2 }
+            else if minutes <= 30 { return 3 }
+            else if minutes <= 40 { return 4 }
+            else { return 5 }
+        case .new:
+            if minutes <= 20 { return 1 }
+            else if minutes <= 30 { return 2 }
+            else if minutes <= 45 { return 3 }
+            else if minutes <= 60 { return 4 }
+            else { return 5 }
+        }
     }
 }
