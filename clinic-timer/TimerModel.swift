@@ -14,9 +14,10 @@ class TimerModel: ObservableObject, Identifiable, Codable {
     @Published var isRunning: Bool = false
     @Published var isPaused: Bool = false
     private var timer: Timer?
+    private var lastActiveDate: Date?
     
     enum CodingKeys: String, CodingKey {
-        case id, name, elapsedTime, isRunning, isPaused
+        case id, name, elapsedTime, isRunning, isPaused, lastActiveDate
     }
     
     init(name: String) {
@@ -30,11 +31,17 @@ class TimerModel: ObservableObject, Identifiable, Codable {
         elapsedTime = try container.decode(TimeInterval.self, forKey: .elapsedTime)
         isRunning = try container.decode(Bool.self, forKey: .isRunning)
         isPaused = try container.decode(Bool.self, forKey: .isPaused)
+        lastActiveDate = try container.decodeIfPresent(Date.self, forKey: .lastActiveDate)
         
-        // Resume the timer if it was running before
-        if isRunning && !isPaused {
-            start()
+        // If the timer was running when the app was closed, update the elapsed time
+        if isRunning && !isPaused, let lastActive = lastActiveDate {
+            let timeSinceLastActive = Date().timeIntervalSince(lastActive)
+            elapsedTime += timeSinceLastActive
         }
+        
+        // Don't automatically start the timer on init, let the UI handle that
+        isRunning = false
+        isPaused = false
     }
     
     func encode(to encoder: Encoder) throws {
@@ -44,6 +51,7 @@ class TimerModel: ObservableObject, Identifiable, Codable {
         try container.encode(elapsedTime, forKey: .elapsedTime)
         try container.encode(isRunning, forKey: .isRunning)
         try container.encode(isPaused, forKey: .isPaused)
+        try container.encode(Date(), forKey: .lastActiveDate)
     }
     
     func start() {
@@ -56,6 +64,9 @@ class TimerModel: ObservableObject, Identifiable, Codable {
                     self.elapsedTime += 1
                 }
             }
+            
+            // Make sure the timer stays active even when scrolling
+            RunLoop.current.add(timer!, forMode: .common)
         }
     }
     
@@ -68,6 +79,7 @@ class TimerModel: ObservableObject, Identifiable, Codable {
         isPaused = false
         elapsedTime = 0
         timer?.invalidate()
+        timer = nil
     }
     
     func rename(to newName: String) {

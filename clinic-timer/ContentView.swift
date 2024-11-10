@@ -100,11 +100,17 @@ struct TimerRow: View {
                 Text(timer.elapsedTime.formattedTime)
                     .font(.largeTitle)
                     .padding(.bottom, 8)
-                Text("Est: \(timer.complexityCode(for: .established)), New: \(timer.complexityCode(for: .new))")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
             }
             Spacer()
+            VStack(alignment: .trailing) {
+                Text("Est: \(timer.complexityCode(for: .established))")
+                    .font(.subheadline)
+                    .foregroundColor(.white)
+                Text("New: \(timer.complexityCode(for: .new))")
+                    .font(.subheadline)
+                    .foregroundColor(.white)
+            }
+            .padding(.trailing, 8)
             if timer.isRunning {
                 if timer.isPaused {
                     Button(action: {
