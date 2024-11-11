@@ -102,4 +102,29 @@ class TimerModel: ObservableObject, Identifiable, Codable {
         }
         return []
     }
+    
+    enum VisitType {
+            case established
+            case new
+        }
+        
+        func complexityCode(for visitType: VisitType) -> Int {
+            let minutes = Int(elapsedTime / 60)
+            
+            switch visitType {
+            case .established:
+                if minutes <= 10 { return 1 }
+                else if minutes <= 20 { return 2 }
+                else if minutes <= 30 { return 3 }
+                else if minutes <= 40 { return 4 }
+                else { return 5 }
+                
+            case .new:
+                if minutes <= 20 { return 1 }
+                else if minutes <= 30 { return 2 }
+                else if minutes <= 45 { return 3 }
+                else if minutes <= 60 { return 4 }
+                else { return 5 }
+            }
+        }
 }

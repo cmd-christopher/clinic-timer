@@ -13,6 +13,7 @@ struct clinic_timerApp: App {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(.dark)
+                .tint(.blue)  // Set your app's accent color
         }
     }
 }

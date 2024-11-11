@@ -14,78 +14,73 @@ struct ContentView: View {
     @State private var showResetConfirmation: Bool = false
     
     var body: some View {
-        NavigationView {
-            VStack {
-                HStack {
+        NavigationStack {
+            List {
+                ForEach(timers) { timer in
+                    TimerRow(timer: timer)
+                        .swipeActions(edge: .leading) {
+                            Button(role: .destructive) {
+                                if let index = timers.firstIndex(where: { $0.id == timer.id }) {
+                                    timers[index].stop()
+                                }
+                            } label: {
+                                Label("Reset", systemImage: "arrow.counterclockwise")
+                            }
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                if let index = timers.firstIndex(where: { $0.id == timer.id }) {
+                                    timers.remove(at: index)
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                }
+                .onMove(perform: moveTimers)
+            }
+            .listStyle(.insetGrouped)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
                     Button(action: {
                         showResetConfirmation = true
                     }) {
-                        Text("Reset Timers")
-                            .foregroundColor(.white)
-                            .padding(8)
-                            .background(Color.red)
-                            .cornerRadius(8)
+                        Text("Reset All")
+                            .foregroundStyle(.red)
                     }
-                    .alert(isPresented: $showResetConfirmation) {
-                        Alert(
-                            title: Text("Confirm Reset"),
-                            message: Text("Are you sure you want to reset all timers?"),
-                            primaryButton: .destructive(Text("Reset")) {
-                                timers.forEach { $0.stop() }
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    }
-                    Spacer()
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(action: {
                         showAddTimerSheet = true
                     }) {
-                        Image(systemName: "plus")
-                            .foregroundColor(.white)
-                            .padding(8)
-                            .background(Color.blue)
-                            .cornerRadius(8)
-                    }
-                    .sheet(isPresented: $showAddTimerSheet) {
-                        AddTimerSheet(newTimerName: $newTimerName, timers: $timers)
+                        Image(systemName: "plus.circle.fill")
                     }
                 }
-                .padding(.horizontal)
                 
-                List {
-                    ForEach(timers) { timer in
-                        TimerRow(timer: timer)
-                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button(action: {
-                                    if let index = timers.firstIndex(where: { $0.id == timer.id }) {
-                                        timers[index].stop()
-                                    }
-                                }) {
-                                    Label("Stop", systemImage: "stop.fill")
-                                }
-                                .tint(.red)
-                            }
-                    }
-                    .onMove(perform: moveTimers)
-                    .onDelete(perform: deleteTimers)
+                ToolbarItem(placement: .topBarTrailing) {
+                    EditButton()
                 }
-                .listStyle(PlainListStyle())
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarHidden(true)
-            .preferredColorScheme(.dark)
-            .onDisappear {
-                TimerModel.saveTimers(timers)
+        }
+        .sheet(isPresented: $showAddTimerSheet) {
+            AddTimerSheet(newTimerName: $newTimerName, timers: $timers)
+        }
+        .alert("Reset All Timers?", isPresented: $showResetConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Reset", role: .destructive) {
+                timers.forEach { $0.stop() }
             }
+        } message: {
+            Text("This will reset all active timers to zero. This action cannot be undone.")
+        }
+        .onDisappear {
+            TimerModel.saveTimers(timers)
         }
     }
     
     func moveTimers(from source: IndexSet, to destination: Int) {
         timers.move(fromOffsets: source, toOffset: destination)
-    }
-    
-    func deleteTimers(at offsets: IndexSet) {
-        timers.remove(atOffsets: offsets)
     }
 }
 
@@ -93,83 +88,50 @@ struct TimerRow: View {
     @ObservedObject var timer: TimerModel
     
     var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
+        VStack(spacing: 12) {
+            HStack {
                 Text(timer.name)
                     .font(.headline)
+                Spacer()
+                StatusBadge(isRunning: timer.isRunning, isPaused: timer.isPaused)
+            }
+            
+            HStack(alignment: .center) {
                 Text(timer.elapsedTime.formattedTime)
                     .font(.largeTitle)
-                    .padding(.bottom, 8)
-            }
-            Spacer()
-            VStack(alignment: .trailing) {
-                Text("Est: \(timer.complexityCode(for: .established))")
-                    .font(.subheadline)
-                    .foregroundColor(.white)
-                Text("New: \(timer.complexityCode(for: .new))")
-                    .font(.subheadline)
-                    .foregroundColor(.white)
-            }
-            .padding(.trailing, 8)
-            if timer.isRunning {
-                if timer.isPaused {
-                    Button(action: {
-                        timer.pause()
-                    }) {
-                        Image(systemName: "play.fill")
-                            .foregroundColor(.green)
-                    }
-                } else {
-                    Button(action: {
-                        timer.pause()
-                    }) {
-                        Image(systemName: "pause.fill")
-                            .foregroundColor(.yellow)
-                    }
-                }
-            } else {
+                    .foregroundStyle(timer.isRunning && !timer.isPaused ? .primary : .secondary)
+                
+                Spacer()
+                
+                ComplexityIndicator(
+                    established: timer.complexityCode(for: .established),
+                    new: timer.complexityCode(for: .new)
+                )
+                
                 Button(action: {
-                    timer.start()
+                    if timer.isRunning {
+                        timer.pause()
+                    } else {
+                        timer.start()
+                    }
                 }) {
-                    Image(systemName: "play.fill")
-                        .foregroundColor(.green)
+                    Image(systemName: timer.isRunning && !timer.isPaused ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(timer.isRunning && !timer.isPaused ? .yellow : .green)
                 }
             }
         }
+        .padding(.vertical, 8)
     }
 }
-
-struct AddTimerSheet: View {
-    @Binding var newTimerName: String
-    @Binding var timers: [TimerModel]
-    @Environment(\.presentationMode) var presentationMode
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                TextField("Timer Name", text: $newTimerName)
-                Button(action: {
-                    timers.append(TimerModel(name: newTimerName))
-                    newTimerName = ""
-                    presentationMode.wrappedValue.dismiss()
-                }) {
-                    Text("Add Timer")
-                }
-            }
-            .navigationTitle("Add Timer")
-        }
-    }
-}
-
-#Preview {
-    ContentView()
-}
+import Foundation
 
 extension TimeInterval {
     var formattedTime: String {
         let hours = Int(self) / 3600
         let minutes = (Int(self) % 3600) / 60
         let seconds = Int(self) % 60
+        
         if hours > 0 {
             return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
         } else {
@@ -178,27 +140,113 @@ extension TimeInterval {
     }
 }
 
-extension TimerModel {
-    enum VisitType {
-        case established
-        case new
+
+struct ComplexityIndicator: View {
+    let established: Int
+    let new: Int
+    
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            HStack(spacing: 4) {
+                Text("EST")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text("\(established)")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+            }
+            
+            HStack(spacing: 4) {
+                Text("NEW")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text("\(new)")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+            }
+        }
+        .padding(.horizontal, 12)
+    }
+}
+
+struct StatusBadge: View {
+    let isRunning: Bool
+    let isPaused: Bool
+    
+    var body: some View {
+        Text(statusText)
+            .font(.caption)
+            .fontWeight(.medium)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(statusColor.opacity(0.2))
+            .foregroundStyle(statusColor)
+            .clipShape(Capsule())
     }
     
-    func complexityCode(for visitType: VisitType) -> Int {
-        let minutes = Int(elapsedTime / 60)
-        switch visitType {
-        case .established:
-            if minutes <= 10 { return 1 }
-            else if minutes <= 20 { return 2 }
-            else if minutes <= 30 { return 3 }
-            else if minutes <= 40 { return 4 }
-            else { return 5 }
-        case .new:
-            if minutes <= 20 { return 1 }
-            else if minutes <= 30 { return 2 }
-            else if minutes <= 45 { return 3 }
-            else if minutes <= 60 { return 4 }
-            else { return 5 }
+    private var statusText: String {
+        if !isRunning {
+            return "Ready"
+        } else if isPaused {
+            return "Paused"
+        } else {
+            return "Running"
         }
     }
+    
+    private var statusColor: Color {
+        if !isRunning {
+            return .gray
+        } else if isPaused {
+            return .yellow
+        } else {
+            return .green
+        }
+    }
+}
+
+
+
+struct AddTimerSheet: View {
+    @Binding var newTimerName: String
+    @Binding var timers: [TimerModel]
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Timer Name", text: $newTimerName)
+                        .autocorrectionDisabled()
+                } footer: {
+                    Text("Enter an identifier for the timer.")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("New Timer")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        if !newTimerName.isEmpty {
+                            timers.append(TimerModel(name: newTimerName))
+                            newTimerName = ""
+                            dismiss()
+                        }
+                    }
+                    .disabled(newTimerName.isEmpty)
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    ContentView()
 }
