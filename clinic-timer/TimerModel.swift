@@ -15,9 +15,10 @@ class TimerModel: ObservableObject, Identifiable, Codable {
     @Published var isPaused: Bool = false
     private var timer: Timer?
     private var lastActiveDate: Date?
+    private var backgroundDate: Date?
     
     enum CodingKeys: String, CodingKey {
-        case id, name, elapsedTime, isRunning, isPaused, lastActiveDate
+        case id, name, elapsedTime, isRunning, isPaused, lastActiveDate, backgroundDate
     }
     
     init(name: String) {
@@ -32,6 +33,7 @@ class TimerModel: ObservableObject, Identifiable, Codable {
         isRunning = try container.decode(Bool.self, forKey: .isRunning)
         isPaused = try container.decode(Bool.self, forKey: .isPaused)
         lastActiveDate = try container.decodeIfPresent(Date.self, forKey: .lastActiveDate)
+        backgroundDate = try container.decodeIfPresent(Date.self, forKey: .backgroundDate)
         
         // If the timer was running when the app was closed, update the elapsed time
         if isRunning && !isPaused, let lastActive = lastActiveDate {
@@ -52,6 +54,7 @@ class TimerModel: ObservableObject, Identifiable, Codable {
         try container.encode(isRunning, forKey: .isRunning)
         try container.encode(isPaused, forKey: .isPaused)
         try container.encode(Date(), forKey: .lastActiveDate)
+        try container.encode(backgroundDate, forKey: .backgroundDate)
     }
     
     func start() {
@@ -86,6 +89,34 @@ class TimerModel: ObservableObject, Identifiable, Codable {
         name = newName
     }
     
+    func applicationWillResignActive() {
+        if isRunning && !isPaused {
+            backgroundDate = Date()
+            timer?.invalidate()
+            timer = nil
+        }
+    }
+    
+    func applicationDidBecomeActive() {
+        if isRunning && !isPaused {
+            if let backgroundDate = backgroundDate {
+                let timeInBackground = Date().timeIntervalSince(backgroundDate)
+                elapsedTime += timeInBackground
+            }
+            
+            // Restart the timer
+            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+                guard let self = self else { return }
+                if !self.isPaused {
+                    self.elapsedTime += 1
+                }
+            }
+            RunLoop.current.add(timer!, forMode: .common)
+            
+            backgroundDate = nil
+        }
+    }
+    
     static func saveTimers(_ timers: [TimerModel]) {
         let encoder = JSONEncoder()
         if let encoded = try? encoder.encode(timers) {
@@ -104,27 +135,27 @@ class TimerModel: ObservableObject, Identifiable, Codable {
     }
     
     enum VisitType {
-            case established
-            case new
-        }
+        case established
+        case new
+    }
+    
+    func complexityCode(for visitType: VisitType) -> Int {
+        let minutes = Int(elapsedTime / 60)
         
-        func complexityCode(for visitType: VisitType) -> Int {
-            let minutes = Int(elapsedTime / 60)
+        switch visitType {
+        case .established:
+            if minutes <= 10 { return 1 }
+            else if minutes <= 20 { return 2 }
+            else if minutes <= 30 { return 3 }
+            else if minutes <= 40 { return 4 }
+            else { return 5 }
             
-            switch visitType {
-            case .established:
-                if minutes <= 10 { return 1 }
-                else if minutes <= 20 { return 2 }
-                else if minutes <= 30 { return 3 }
-                else if minutes <= 40 { return 4 }
-                else { return 5 }
-                
-            case .new:
-                if minutes <= 20 { return 1 }
-                else if minutes <= 30 { return 2 }
-                else if minutes <= 45 { return 3 }
-                else if minutes <= 60 { return 4 }
-                else { return 5 }
-            }
+        case .new:
+            if minutes <= 20 { return 1 }
+            else if minutes <= 30 { return 2 }
+            else if minutes <= 45 { return 3 }
+            else if minutes <= 60 { return 4 }
+            else { return 5 }
         }
+    }
 }

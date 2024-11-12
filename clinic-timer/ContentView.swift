@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var timers: [TimerModel] = TimerModel.loadTimers()
+    @EnvironmentObject private var appState: AppStateManager
     @State private var newTimerName: String = ""
     @State private var showAddTimerSheet: Bool = false
     @State private var showResetConfirmation: Bool = false
@@ -16,12 +16,12 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(timers) { timer in
+                ForEach(appState.timers) { timer in
                     TimerRow(timer: timer)
                         .swipeActions(edge: .leading) {
                             Button(role: .destructive) {
-                                if let index = timers.firstIndex(where: { $0.id == timer.id }) {
-                                    timers[index].stop()
+                                if let index = appState.timers.firstIndex(where: { $0.id == timer.id }) {
+                                    appState.timers[index].stop()
                                 }
                             } label: {
                                 Label("Reset", systemImage: "arrow.counterclockwise")
@@ -29,8 +29,8 @@ struct ContentView: View {
                         }
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
-                                if let index = timers.firstIndex(where: { $0.id == timer.id }) {
-                                    timers.remove(at: index)
+                                if let index = appState.timers.firstIndex(where: { $0.id == timer.id }) {
+                                    appState.timers.remove(at: index)
                                 }
                             } label: {
                                 Label("Delete", systemImage: "trash")
@@ -64,23 +64,23 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $showAddTimerSheet) {
-            AddTimerSheet(newTimerName: $newTimerName, timers: $timers)
+            AddTimerSheet(newTimerName: $newTimerName)
         }
         .alert("Reset All Timers?", isPresented: $showResetConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Reset", role: .destructive) {
-                timers.forEach { $0.stop() }
+                appState.timers.forEach { $0.stop() }
             }
         } message: {
             Text("This will reset all active timers to zero. This action cannot be undone.")
         }
         .onDisappear {
-            TimerModel.saveTimers(timers)
+            TimerModel.saveTimers(appState.timers)
         }
     }
     
     func moveTimers(from source: IndexSet, to destination: Int) {
-        timers.move(fromOffsets: source, toOffset: destination)
+        appState.timers.move(fromOffsets: source, toOffset: destination)
     }
 }
 
@@ -124,7 +124,6 @@ struct TimerRow: View {
         .padding(.vertical, 8)
     }
 }
-import Foundation
 
 extension TimeInterval {
     var formattedTime: String {
@@ -139,7 +138,6 @@ extension TimeInterval {
         }
     }
 }
-
 
 struct ComplexityIndicator: View {
     let established: Int
@@ -205,11 +203,9 @@ struct StatusBadge: View {
     }
 }
 
-
-
 struct AddTimerSheet: View {
     @Binding var newTimerName: String
-    @Binding var timers: [TimerModel]
+    @EnvironmentObject private var appState: AppStateManager
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -235,7 +231,7 @@ struct AddTimerSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         if !newTimerName.isEmpty {
-                            timers.append(TimerModel(name: newTimerName))
+                            appState.timers.append(TimerModel(name: newTimerName))
                             newTimerName = ""
                             dismiss()
                         }
