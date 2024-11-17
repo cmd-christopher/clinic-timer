@@ -141,25 +141,38 @@ class TimerModel: ObservableObject, Identifiable, Codable {
     enum VisitType {
         case established
         case new
+        case phone
     }
     
-    func complexityCode(for visitType: VisitType) -> Int {
-        let minutes = Int(elapsedTime / 60)
-        
-        switch visitType {
-        case .established:
-            if minutes <= 10 { return 1 }
-            else if minutes <= 20 { return 2 }
-            else if minutes <= 30 { return 3 }
-            else if minutes <= 40 { return 4 }
-            else { return 5 }
-            
-        case .new:
-            if minutes <= 20 { return 1 }
-            else if minutes <= 30 { return 2 }
-            else if minutes <= 45 { return 3 }
-            else if minutes <= 60 { return 4 }
-            else { return 5 }
+    var visitType: VisitType {
+            if name.lowercased().contains("phone") {
+                return .phone
+            }
+            return .established // Default for complexity indicator
         }
-    }
+    
+    func complexityCode(for visitType: VisitType) -> Int {
+            let minutes = Int(elapsedTime / 60)
+            
+            switch visitType {
+            case .established:
+                if minutes <= 10 { return 1 }
+                else if minutes <= 20 { return 2 }
+                else if minutes <= 30 { return 3 }
+                else if minutes <= 40 { return 4 }
+                else { return 5 }
+                
+            case .new:
+                if minutes <= 20 { return 1 }
+                else if minutes <= 30 { return 2 }
+                else if minutes <= 45 { return 3 }
+                else if minutes <= 60 { return 4 }
+                else { return 5 }
+                
+            case .phone:
+                if minutes <= 10 { return 1 }
+                else if minutes <= 20 { return 2 }
+                else { return 3 }
+            }
+        }
 }

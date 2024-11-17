@@ -115,10 +115,7 @@ struct TimerRow: View {
                 
                 Spacer()
                 
-                ComplexityIndicator(
-                    established: timer.complexityCode(for: .established),
-                    new: timer.complexityCode(for: .new)
-                )
+                ComplexityIndicator(timer: timer)
                 
                 Button(action: {
                     if timer.isRunning {
@@ -138,28 +135,47 @@ struct TimerRow: View {
 }
 
 struct ComplexityIndicator: View {
-    let established: Int
-    let new: Int
+    let timer: TimerModel
     
     var body: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            HStack(spacing: 4) {
-                Text("EST")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Text("\(established)")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+        if timer.visitType == .phone {
+            PhoneLevelIndicator(level: timer.complexityCode(for: .phone))
+        } else {
+            VStack(alignment: .trailing, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text("EST")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text("\(timer.complexityCode(for: .established))")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                }
+                
+                HStack(spacing: 4) {
+                    Text("NEW")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text("\(timer.complexityCode(for: .new))")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                }
             }
-            
-            HStack(spacing: 4) {
-                Text("NEW")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Text("\(new)")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-            }
+            .padding(.horizontal, 12)
+        }
+    }
+}
+
+struct PhoneLevelIndicator: View {
+    let level: Int
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "phone.fill")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("\(level)")
+                .font(.subheadline)
+                .fontWeight(.semibold)
         }
         .padding(.horizontal, 12)
     }
