@@ -59,6 +59,7 @@ class TimerModel: ObservableObject, Identifiable, Codable {
     
     func start() {
         if !isRunning {
+            objectWillChange.send()
             isRunning = true
             isPaused = false
             timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -74,18 +75,21 @@ class TimerModel: ObservableObject, Identifiable, Codable {
     }
     
     func pause() {
+        objectWillChange.send()
         isPaused.toggle()
     }
     
     func stop() {
-        isRunning = false
-        isPaused = false
-        elapsedTime = 0
+        objectWillChange.send()  // Explicitly notify observers before changes
         timer?.invalidate()
         timer = nil
+        elapsedTime = 0
+        isRunning = false
+        isPaused = false
     }
     
     func rename(to newName: String) {
+        objectWillChange.send()
         name = newName
     }
     

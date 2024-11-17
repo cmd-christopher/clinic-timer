@@ -20,8 +20,14 @@ struct ContentView: View {
                     TimerRow(timer: timer)
                         .swipeActions(edge: .leading) {
                             Button(role: .destructive) {
-                                if let index = appState.timers.firstIndex(where: { $0.id == timer.id }) {
-                                    appState.timers[index].stop()
+                                withAnimation {
+                                    if let index = appState.timers.firstIndex(where: { $0.id == timer.id }) {
+                                        var transaction = Transaction()
+                                        transaction.animation = .default
+                                        withTransaction(transaction) {
+                                            appState.timers[index].stop()
+                                        }
+                                    }
                                 }
                             } label: {
                                 Label("Reset", systemImage: "arrow.counterclockwise")
@@ -30,7 +36,9 @@ struct ContentView: View {
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 if let index = appState.timers.firstIndex(where: { $0.id == timer.id }) {
-                                    appState.timers.remove(at: index)
+                                    withAnimation {
+                                        appState.timers.remove(at: index)
+                                    }
                                 }
                             } label: {
                                 Label("Delete", systemImage: "trash")
@@ -69,7 +77,9 @@ struct ContentView: View {
         .alert("Reset All Timers?", isPresented: $showResetConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Reset", role: .destructive) {
-                appState.timers.forEach { $0.stop() }
+                withAnimation {
+                    appState.timers.forEach { $0.stop() }
+                }
             }
         } message: {
             Text("This will reset all active timers to zero. This action cannot be undone.")
@@ -80,7 +90,9 @@ struct ContentView: View {
     }
     
     func moveTimers(from source: IndexSet, to destination: Int) {
-        appState.timers.move(fromOffsets: source, toOffset: destination)
+        withAnimation {
+            appState.timers.move(fromOffsets: source, toOffset: destination)
+        }
     }
 }
 
@@ -122,20 +134,6 @@ struct TimerRow: View {
             }
         }
         .padding(.vertical, 8)
-    }
-}
-
-extension TimeInterval {
-    var formattedTime: String {
-        let hours = Int(self) / 3600
-        let minutes = (Int(self) % 3600) / 60
-        let seconds = Int(self) % 60
-        
-        if hours > 0 {
-            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            return String(format: "%02d:%02d", minutes, seconds)
-        }
     }
 }
 
@@ -231,7 +229,9 @@ struct AddTimerSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         if !newTimerName.isEmpty {
-                            appState.timers.append(TimerModel(name: newTimerName))
+                            withAnimation {
+                                appState.timers.append(TimerModel(name: newTimerName))
+                            }
                             newTimerName = ""
                             dismiss()
                         }
@@ -243,6 +243,16 @@ struct AddTimerSheet: View {
     }
 }
 
-#Preview {
-    ContentView()
+extension TimeInterval {
+    var formattedTime: String {
+        let hours = Int(self) / 3600
+        let minutes = (Int(self) % 3600) / 60
+        let seconds = Int(self) % 60
+        
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
 }
