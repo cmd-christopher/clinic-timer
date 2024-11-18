@@ -115,7 +115,9 @@ struct TimerRow: View {
                 
                 Spacer()
                 
+                // Force view update when timer changes
                 ComplexityIndicator(timer: timer)
+                    .id(timer.elapsedTime)
                 
                 Button(action: {
                     if timer.isRunning {
@@ -135,7 +137,7 @@ struct TimerRow: View {
 }
 
 struct ComplexityIndicator: View {
-    let timer: TimerModel
+    @ObservedObject var timer: TimerModel
     
     var body: some View {
         if timer.visitType == .phone {

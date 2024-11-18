@@ -10,7 +10,12 @@ import Foundation
 class TimerModel: ObservableObject, Identifiable, Codable {
     var id = UUID()
     @Published var name: String
-    @Published var elapsedTime: TimeInterval = 0
+    @Published var elapsedTime: TimeInterval = 0 {
+        didSet {
+            // Ensure view updates when elapsedTime changes
+            objectWillChange.send()
+        }
+    }
     @Published var isRunning: Bool = false
     @Published var isPaused: Bool = false
     private var timer: Timer?
@@ -59,38 +64,42 @@ class TimerModel: ObservableObject, Identifiable, Codable {
     
     func start() {
         if !isRunning {
-            objectWillChange.send()
             isRunning = true
             isPaused = false
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-                guard let self = self else { return }
-                if !self.isPaused {
-                    self.elapsedTime += 1
-                }
-            }
-            
-            // Make sure the timer stays active even when scrolling
-            RunLoop.current.add(timer!, forMode: .common)
+            startTimer()
+            objectWillChange.send()
         }
     }
     
+    private func startTimer() {
+        timer?.invalidate() // Ensure any existing timer is invalidated
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if !self.isPaused {
+                self.elapsedTime += 1
+                // No need for explicit objectWillChange.send() here as it's handled by the property observer
+            }
+        }
+        RunLoop.current.add(timer!, forMode: .common)
+    }
+    
     func pause() {
-        objectWillChange.send()
         isPaused.toggle()
+        objectWillChange.send()
     }
     
     func stop() {
-        objectWillChange.send()  // Explicitly notify observers before changes
         timer?.invalidate()
         timer = nil
         elapsedTime = 0
         isRunning = false
         isPaused = false
+        objectWillChange.send()
     }
     
     func rename(to newName: String) {
-        objectWillChange.send()
         name = newName
+        objectWillChange.send()
     }
     
     func applicationWillResignActive() {
@@ -107,16 +116,7 @@ class TimerModel: ObservableObject, Identifiable, Codable {
                 let timeInBackground = Date().timeIntervalSince(backgroundDate)
                 elapsedTime += timeInBackground
             }
-            
-            // Restart the timer
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-                guard let self = self else { return }
-                if !self.isPaused {
-                    self.elapsedTime += 1
-                }
-            }
-            RunLoop.current.add(timer!, forMode: .common)
-            
+            startTimer()
             backgroundDate = nil
         }
     }
@@ -145,34 +145,37 @@ class TimerModel: ObservableObject, Identifiable, Codable {
     }
     
     var visitType: VisitType {
-            if name.lowercased().contains("phone") {
-                return .phone
-            }
-            return .established // Default for complexity indicator
+        if name.lowercased().contains("phone") {
+            return .phone
         }
+        if name.lowercased().contains("new") {
+            return .new
+        }
+        return .established
+    }
     
     func complexityCode(for visitType: VisitType) -> Int {
-            let minutes = Int(elapsedTime / 60)
+        let minutes = Int(elapsedTime) / 60  // Convert seconds to minutes
+        
+        switch visitType {
+        case .established:
+            if minutes <= 10 { return 1 }
+            if minutes <= 20 { return 2 }
+            if minutes <= 30 { return 3 }
+            if minutes <= 40 { return 4 }
+            return 5
             
-            switch visitType {
-            case .established:
-                if minutes <= 10 { return 1 }
-                else if minutes <= 20 { return 2 }
-                else if minutes <= 30 { return 3 }
-                else if minutes <= 40 { return 4 }
-                else { return 5 }
-                
-            case .new:
-                if minutes <= 20 { return 1 }
-                else if minutes <= 30 { return 2 }
-                else if minutes <= 45 { return 3 }
-                else if minutes <= 60 { return 4 }
-                else { return 5 }
-                
-            case .phone:
-                if minutes <= 10 { return 1 }
-                else if minutes <= 20 { return 2 }
-                else { return 3 }
-            }
+        case .new:
+            if minutes <= 20 { return 1 }
+            if minutes <= 30 { return 2 }
+            if minutes <= 45 { return 3 }
+            if minutes <= 60 { return 4 }
+            return 5
+            
+        case .phone:
+            if minutes <= 10 { return 1 }
+            if minutes <= 20 { return 2 }
+            return 3
         }
+    }
 }
