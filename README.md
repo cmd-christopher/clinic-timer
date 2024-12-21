@@ -6,3 +6,4 @@ This app is intended to help clinicians keep track of time spent on outpatient o
 
 1. Open the project in Xcode.
 2. Build and run the app on a simulator or a physical device.
+![IMG_838E47CE9308-1](https://github.com/user-attachments/assets/a0f55cca-de77-46f9-ae73-69f574d55fbb)
