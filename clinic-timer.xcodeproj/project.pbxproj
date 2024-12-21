@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9D07E0902D1662E800B4E80C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 9D07E08F2D1662E800B4E80C /* README.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		9D82FB3D2CDDA58C00C62198 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9D07E08F2D1662E800B4E80C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9D82FB2C2CDDA58B00C62198 /* clinic-timer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "clinic-timer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D82FB3C2CDDA58C00C62198 /* clinic-timerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "clinic-timerTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D82FB462CDDA58C00C62198 /* clinic-timerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "clinic-timerUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -75,6 +80,7 @@
 		9D82FB232CDDA58B00C62198 = {
 			isa = PBXGroup;
 			children = (
+				9D07E08F2D1662E800B4E80C /* README.md */,
 				9D82FB2E2CDDA58B00C62198 /* clinic-timer */,
 				9D82FB3F2CDDA58C00C62198 /* clinic-timerTests */,
 				9D82FB492CDDA58C00C62198 /* clinic-timerUITests */,
@@ -212,6 +218,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9D07E0902D1662E800B4E80C /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
