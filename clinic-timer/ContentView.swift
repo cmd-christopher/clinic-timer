@@ -139,12 +139,38 @@ struct TimerRow: View {
 struct ComplexityIndicator: View {
     @ObservedObject var timer: TimerModel
     
+    private func get99417Multiplier(for visitType: TimerModel.VisitType) -> Int {
+        let elapsedTimeInMinutes = Int(timer.elapsedTime) / 60
+        let threshold: Double
+        
+        switch visitType {
+        case .new:
+            threshold = 75.0
+        case .established:
+            threshold = 55.0
+        case .phone:
+            return 0
+        }
+        
+        if Double(elapsedTimeInMinutes) <= threshold {
+            return 0
+        }
+        
+        let excessTime = Double(elapsedTimeInMinutes) - threshold
+        return max(0, Int(ceil(excessTime / 15.0)))
+    }
+    
     var body: some View {
         if timer.visitType == .phone {
             PhoneLevelIndicator(level: timer.complexityCode(for: .phone))
         } else {
             VStack(alignment: .trailing, spacing: 4) {
                 HStack(spacing: 4) {
+                    if get99417Multiplier(for: .established) > 0 {
+                        Text(get99417Multiplier(for: .established) == 1 ? "99417" : "99417 x \(get99417Multiplier(for: .established))")
+                            .font(.caption2)
+                            .foregroundStyle(.yellow)
+                    }
                     Text("EST")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -154,6 +180,11 @@ struct ComplexityIndicator: View {
                 }
                 
                 HStack(spacing: 4) {
+                    if get99417Multiplier(for: .new) > 0 {
+                        Text(get99417Multiplier(for: .new) == 1 ? "99417" : "99417 x \(get99417Multiplier(for: .new))")
+                            .font(.caption2)
+                            .foregroundStyle(.yellow)
+                    }
                     Text("NEW")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
